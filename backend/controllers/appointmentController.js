@@ -14,14 +14,13 @@ const bookAppointment = async (req, res) => {
       reason,
     } = req.body;
 
-    // 🔒 validation
+
     if (!patientId || !doctorName || !appointmentDate || !timeSlot) {
       return res.status(400).json({
         message: "Missing required appointment fields",
       });
     }
 
-    // 🧑‍⚕️ get patient details (email, name)
     const patient = await Patient.findById(patientId);
     if (!patient) {
       return res.status(404).json({
@@ -29,7 +28,7 @@ const bookAppointment = async (req, res) => {
       });
     }
 
-    // 💾 save appointment
+ 
     const appointment = new Appointment({
       patientId,
       doctorName,
@@ -40,43 +39,34 @@ const bookAppointment = async (req, res) => {
 
     await appointment.save();
 
-    // // 📧 SEND EMAIL (IMPORTANT PART)
-    // await transporter.sendMail({
-    //   from: `"City Hospital" <${process.env.EMAIL_USER}>`,
-    //   to: patient.email,
-    //   subject: "Appointment Confirmation - City Hospital",
-    //   html: `
-    //     <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-    //       <h2 style="color: #16a34a;">✅ Appointment Confirmed</h2>
-    //       <p>Hello <b>${patient.name}</b>,</p>
-    //       <p>Your appointment has been successfully booked.</p>
+  
+    await transporter.sendMail({
+      from: `"City Hospital" <${process.env.EMAIL_USER}>`,
+      to: patient.email, // 
+      subject: "Appointment Confirmation - City Hospital",
+      html: `
+        <h2>Appointment Confirmed ✅</h2>
+        <p>Hello <b>${patient.name}</b>,</p>
+        <p>Your appointment has been successfully booked.</p>
+        <hr/>
+        <p><b>Doctor:</b> ${doctorName}</p>
+        <p><b>Date:</b> ${new Date(appointmentDate).toDateString()}</p>
+        <p><b>Time:</b> ${timeSlot}</p>
+        <p><b>Reason:</b> ${reason}</p>
+        <hr/>
+        <p>Please arrive 15 minutes early.</p>
+        <p>Thank you for choosing City Hospital.</p>
+      `,
+    });
 
-    //       <h3>📋 Appointment Details:</h3>
-    //       <ul>
-    //         <li><b>Doctor:</b> ${doctorName}</li>
-    //         <li><b>Date:</b> ${new Date(appointmentDate).toDateString()}</li>
-    //         <li><b>Time:</b> ${timeSlot}</li>
-    //         <li><b>Reason:</b> ${reason || "General Consultation"}</li>
-    //       </ul>
-
-    //       <p style="margin-top: 15px;">
-    //         ⚠️ Please arrive <b>15 minutes early</b>.
-    //       </p>
-
-    //       <p>Thank you,<br/>
-    //       <b>City Hospital</b></p>
-    //     </div>
-    //   `,
-    // });
-
-    console.log("📧 Email sent to:", patient.email);
+    console.log("📧 Email successfully sent to USER:", patient.email);
 
     return res.status(201).json({
-      message: "Appointment booked successfully & email sent",
+      message: "Appointment booked successfully & email sent to user",
       appointment,
     });
   } catch (error) {
-    console.error("BOOK APPOINTMENT SERVER ERROR 👉", error);
+    console.error("❌ BOOK APPOINTMENT SERVER ERROR 👉", error);
     return res.status(500).json({
       message: "Server error while booking appointment",
       error: error.message,
@@ -85,3 +75,4 @@ const bookAppointment = async (req, res) => {
 };
 
 module.exports = { bookAppointment };
+
